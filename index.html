@@ -210,9 +210,9 @@ function tryDash(){
   if((state!=='playing'&&state!=='boss'))return;
   if(ship.dashCd>0)return;
   ship.dashCd=3;ship.dashing=true;
-  const s=18*(1+upg('velocity')*.15);
-  ship.vx+=Math.cos(ship.angle)*s;
-  ship.vy+=Math.sin(ship.angle)*s;
+  const dashDist=120*(1+upg('velocity')*.15);
+  ship.x+=Math.cos(ship.angle)*dashDist;
+  ship.y+=Math.sin(ship.angle)*dashDist;
   setTimeout(()=>ship.dashing=false,260);
 }
 
@@ -543,37 +543,27 @@ function loop(ts){
   }
   ctx.globalAlpha=1;
 
-  // ── SHIP MOVEMENT — direct, clean, responsive
-  // Ship always faces mouse
+  // ── SHIP MOVEMENT — direct position control, guaranteed to work
+  // Ship faces mouse at all times
   const mdx=mx-ship.x,mdy=my-ship.y;
   if(Math.hypot(mdx,mdy)>6) ship.angle=Math.atan2(mdy,mdx);
 
-  const spMult=1+upg('velocity')*.25;
-  const TOP=5.5*spMult; // max pixels moved per frame (at 60fps)
-  const c=Math.cos(ship.angle),sn=Math.sin(ship.angle);
+  const spMult=1+upg('velocity')*.3;
+  const SPD=4.5*spMult;                // pixels moved per frame
+  const dtScale=Math.min(dt*60,2);     // framerate-safe multiplier (caps at 2x on lag)
+  const c=Math.cos(ship.angle), sn=Math.sin(ship.angle);
 
-  // Build a target velocity vector from keys (in screen-pixels-per-frame)
-  let tvx=0,tvy=0;
-  if(keys['KeyW']||keys['ArrowUp'])   {tvx+=c*TOP;      tvy+=sn*TOP;}
-  if(keys['KeyS']||keys['ArrowDown']) {tvx-=c*TOP*.55;  tvy-=sn*TOP*.55;}
-  if(keys['KeyA']||keys['ArrowLeft']) {tvx+=sn*TOP*.7;  tvy-=c*TOP*.7;}
-  if(keys['KeyD']||keys['ArrowRight']){tvx-=sn*TOP*.7;  tvy+=c*TOP*.7;}
+  // W/S = forward/back along facing direction. A/D = strafe perpendicular.
+  // Direct pixel push — no velocity layers, no drag to fight.
+  if(keys['KeyW']||keys['ArrowUp'])   {ship.x+=c*SPD*dtScale; ship.y+=sn*SPD*dtScale;}
+  if(keys['KeyS']||keys['ArrowDown']) {ship.x-=c*SPD*.6*dtScale; ship.y-=sn*SPD*.6*dtScale;}
+  if(keys['KeyA']||keys['ArrowLeft']) {ship.x+=sn*SPD*.75*dtScale; ship.y-=c*SPD*.75*dtScale;}
+  if(keys['KeyD']||keys['ArrowRight']){ship.x-=sn*SPD*.75*dtScale; ship.y+=c*SPD*.75*dtScale;}
 
-  const anyKey=tvx!==0||tvy!==0;
-  if(anyKey){
-    // Fast lerp to target — feels like instant responsive thrust
-    ship.vx+=(tvx-ship.vx)*.25;
-    ship.vy+=(tvy-ship.vy)*.25;
-  } else {
-    // No input: gentle coast to a stop
-    ship.vx*=.91;
-    ship.vy*=.91;
-  }
-
+  // Keep vx/vy updated from actual movement (used by trail + engine flame)
+  const prevX=ship.trail[0]?.x??ship.x, prevY=ship.trail[0]?.y??ship.y;
+  ship.vx=ship.x-prevX; ship.vy=ship.y-prevY;
   const spd=Math.hypot(ship.vx,ship.vy);
-  // Move — velocity is already in px/frame, scale by dt so it's frame-rate independent
-  ship.x+=ship.vx*dt*60;
-  ship.y+=ship.vy*dt*60;
   if(ship.x<-30)ship.x=W+30;else if(ship.x>W+30)ship.x=-30;
   if(ship.y<-30)ship.y=H+30;else if(ship.y>H+30)ship.y=-30;
 
