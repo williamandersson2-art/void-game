@@ -83,14 +83,14 @@ canvas{display:block;cursor:none}
   <div id="wave-announce"></div>
   <div id="orb-counter"></div>
   <div id="upgrades-bar"></div>
-  <div id="ctrl-hint">WASD / ARROWS · MOVE<br>MOUSE · STEER<br>SPACE · SHOOT</div>
+  <div id="ctrl-hint">A/D · ROTATE<br>W · THRUST<br>S · BRAKE<br>SPACE · SHOOT</div>
 </div>
 
 <!-- MENU -->
 <div class="ov" id="ov-menu">
   <div class="big">VOID</div>
   <div class="sub">SURVIVE THE ASTEROID FIELD</div>
-  <div class="hint">WASD / ARROWS · STEER WITH MOUSE · SPACE TO SHOOT<br>COLLECT ORBS → CHOOSE UPGRADES EVERY 5 ORBS<br>BOSS BATTLES EVERY 5 WAVES</div>
+  <div class="hint">A/D ROTATE · W THRUST · S BRAKE · SPACE SHOOT<br>COLLECT ORBS → CHOOSE UPGRADES EVERY 5 ORBS<br>BOSS BATTLES EVERY 5 WAVES</div>
   <button class="btn" onclick="startGame()">LAUNCH</button>
 </div>
 
@@ -543,24 +543,21 @@ function loop(ts){
   }
   ctx.globalAlpha=1;
 
-  // ── SHIP MOVEMENT — direct position control, guaranteed to work
-  // Ship faces mouse at all times
-  const mdx=mx-ship.x,mdy=my-ship.y;
-  if(Math.hypot(mdx,mdy)>6) ship.angle=Math.atan2(mdy,mdx);
-
+  // ── SHIP MOVEMENT — Asteroids style: A/D rotate, W thrust, S brake
   const spMult=1+upg('velocity')*.3;
-  const SPD=4.5*spMult;                // pixels moved per frame
-  const dtScale=Math.min(dt*60,2);     // framerate-safe multiplier (caps at 2x on lag)
+  const ROT_SPD=3.5*Math.PI/180*dt*60;  // degrees per frame → radians
+  const THRUST=4.2*spMult;
+  const dtScale=Math.min(dt*60,2);
+
+  if(keys['KeyA']||keys['ArrowLeft'])  ship.angle-=ROT_SPD;
+  if(keys['KeyD']||keys['ArrowRight']) ship.angle+=ROT_SPD;
+
   const c=Math.cos(ship.angle), sn=Math.sin(ship.angle);
 
-  // W/S = forward/back along facing direction. A/D = strafe perpendicular.
-  // Direct pixel push — no velocity layers, no drag to fight.
-  if(keys['KeyW']||keys['ArrowUp'])   {ship.x+=c*SPD*dtScale; ship.y+=sn*SPD*dtScale;}
-  if(keys['KeyS']||keys['ArrowDown']) {ship.x-=c*SPD*.6*dtScale; ship.y-=sn*SPD*.6*dtScale;}
-  if(keys['KeyA']||keys['ArrowLeft']) {ship.x+=sn*SPD*.75*dtScale; ship.y-=c*SPD*.75*dtScale;}
-  if(keys['KeyD']||keys['ArrowRight']){ship.x-=sn*SPD*.75*dtScale; ship.y+=c*SPD*.75*dtScale;}
+  if(keys['KeyW']||keys['ArrowUp'])   {ship.x+=c*THRUST*dtScale; ship.y+=sn*THRUST*dtScale;}
+  if(keys['KeyS']||keys['ArrowDown']) {ship.x-=c*THRUST*.5*dtScale; ship.y-=sn*THRUST*.5*dtScale;}
 
-  // Keep vx/vy updated from actual movement (used by trail + engine flame)
+  // Keep vx/vy for trail + engine flame visuals
   const prevX=ship.trail[0]?.x??ship.x, prevY=ship.trail[0]?.y??ship.y;
   ship.vx=ship.x-prevX; ship.vy=ship.y-prevY;
   const spd=Math.hypot(ship.vx,ship.vy);
