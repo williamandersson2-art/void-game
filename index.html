@@ -210,7 +210,7 @@ function tryDash(){
   if((state!=='playing'&&state!=='boss'))return;
   if(ship.dashCd>0)return;
   ship.dashCd=3;ship.dashing=true;
-  const s=9*(1+upg('velocity')*.15);
+  const s=18*(1+upg('velocity')*.15);
   ship.vx+=Math.cos(ship.angle)*s;
   ship.vy+=Math.sin(ship.angle)*s;
   setTimeout(()=>ship.dashing=false,260);
@@ -543,57 +543,37 @@ function loop(ts){
   }
   ctx.globalAlpha=1;
 
-  // ── SHIP MOVEMENT
-  // Ship always faces the mouse cursor
+  // ── SHIP MOVEMENT — direct, clean, responsive
+  // Ship always faces mouse
   const mdx=mx-ship.x,mdy=my-ship.y;
-  if(Math.hypot(mdx,mdy)>8) ship.angle=Math.atan2(mdy,mdx);
+  if(Math.hypot(mdx,mdy)>6) ship.angle=Math.atan2(mdy,mdx);
 
-  const spMult=1+upg('velocity')*.22;
-  const THRUST=0.22*spMult;
-  const STRAFE=0.14*spMult;
-  const MAX_SPD=6.5*spMult;
+  const spMult=1+upg('velocity')*.25;
+  const TOP=5.5*spMult; // max pixels moved per frame (at 60fps)
+  const c=Math.cos(ship.angle),sn=Math.sin(ship.angle);
 
-  // W = thrust forward in the direction the ship faces
-  // S = brake / reverse thrust
-  // A = strafe left  (perpendicular to facing)
-  // D = strafe right
-  const fwd=ship.angle;
-  const right=ship.angle+Math.PI/2;
+  // Build a target velocity vector from keys (in screen-pixels-per-frame)
+  let tvx=0,tvy=0;
+  if(keys['KeyW']||keys['ArrowUp'])   {tvx+=c*TOP;      tvy+=sn*TOP;}
+  if(keys['KeyS']||keys['ArrowDown']) {tvx-=c*TOP*.55;  tvy-=sn*TOP*.55;}
+  if(keys['KeyA']||keys['ArrowLeft']) {tvx+=sn*TOP*.7;  tvy-=c*TOP*.7;}
+  if(keys['KeyD']||keys['ArrowRight']){tvx-=sn*TOP*.7;  tvy+=c*TOP*.7;}
 
-  let thrusting=false;
-  if(keys['KeyW']||keys['ArrowUp']){
-    ship.vx+=Math.cos(fwd)*THRUST*dt*60;
-    ship.vy+=Math.sin(fwd)*THRUST*dt*60;
-    thrusting=true;
-  }
-  if(keys['KeyS']||keys['ArrowDown']){
-    ship.vx-=Math.cos(fwd)*THRUST*.7*dt*60;
-    ship.vy-=Math.sin(fwd)*THRUST*.7*dt*60;
-    thrusting=true;
-  }
-  if(keys['KeyA']||keys['ArrowLeft']){
-    ship.vx+=Math.cos(right-Math.PI)*STRAFE*dt*60;
-    ship.vy+=Math.sin(right-Math.PI)*STRAFE*dt*60;
-    thrusting=true;
-  }
-  if(keys['KeyD']||keys['ArrowRight']){
-    ship.vx+=Math.cos(right)*STRAFE*dt*60;
-    ship.vy+=Math.sin(right)*STRAFE*dt*60;
-    thrusting=true;
+  const anyKey=tvx!==0||tvy!==0;
+  if(anyKey){
+    // Fast lerp to target — feels like instant responsive thrust
+    ship.vx+=(tvx-ship.vx)*.25;
+    ship.vy+=(tvy-ship.vy)*.25;
+  } else {
+    // No input: gentle coast to a stop
+    ship.vx*=.91;
+    ship.vy*=.91;
   }
 
-  // KEY FIX: near-zero drag while thrusting → ship freely builds to MAX_SPD
-  // Heavy drag only when coasting → slows to stop naturally
-  const thrusting=keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']||
-                  keys['ArrowUp']||keys['ArrowDown']||keys['ArrowLeft']||keys['ArrowRight'];
-  const drag=thrusting?Math.pow(.994,dt*60):Math.pow(.84,dt*60);
-  ship.vx*=drag; ship.vy*=drag;
-
-  // Speed cap
   const spd=Math.hypot(ship.vx,ship.vy);
-  if(spd>MAX_SPD){ship.vx=ship.vx/spd*MAX_SPD;ship.vy=ship.vy/spd*MAX_SPD;}
-
-  ship.x+=ship.vx*dt*60*.55;ship.y+=ship.vy*dt*60*.55;
+  // Move — velocity is already in px/frame, scale by dt so it's frame-rate independent
+  ship.x+=ship.vx*dt*60;
+  ship.y+=ship.vy*dt*60;
   if(ship.x<-30)ship.x=W+30;else if(ship.x>W+30)ship.x=-30;
   if(ship.y<-30)ship.y=H+30;else if(ship.y>H+30)ship.y=-30;
 
@@ -722,7 +702,7 @@ function loop(ts){
     ctx.fillStyle='#e8f4ff';ctx.strokeStyle=accent;ctx.lineWidth=1.4;
     ctx.beginPath();ctx.moveTo(0,-ship.r*1.1);ctx.lineTo(ship.r*.72,ship.r*.85);ctx.lineTo(0,ship.r*.38);ctx.lineTo(-ship.r*.72,ship.r*.85);ctx.closePath();
     ctx.fill();ctx.stroke();
-    if(spd>.3){
+    if(spd>0.8){
       ctx.shadowBlur=13;ctx.shadowColor=accent;ctx.fillStyle=accent+'aa';
       ctx.beginPath();ctx.moveTo(-ship.r*.26,ship.r*.38);ctx.lineTo(0,ship.r*.9+Math.random()*7);ctx.lineTo(ship.r*.26,ship.r*.38);ctx.closePath();ctx.fill();
     }
