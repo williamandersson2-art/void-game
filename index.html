@@ -549,9 +549,9 @@ function loop(ts){
   if(Math.hypot(mdx,mdy)>8) ship.angle=Math.atan2(mdy,mdx);
 
   const spMult=1+upg('velocity')*.22;
-  const THRUST=0.38*spMult;    // W forward power
-  const STRAFE=0.26*spMult;    // A/D sideways power
-  const MAX_SPD=5.8*spMult;
+  const THRUST=0.22*spMult;
+  const STRAFE=0.14*spMult;
+  const MAX_SPD=6.5*spMult;
 
   // W = thrust forward in the direction the ship faces
   // S = brake / reverse thrust
@@ -560,27 +560,33 @@ function loop(ts){
   const fwd=ship.angle;
   const right=ship.angle+Math.PI/2;
 
+  let thrusting=false;
   if(keys['KeyW']||keys['ArrowUp']){
     ship.vx+=Math.cos(fwd)*THRUST*dt*60;
     ship.vy+=Math.sin(fwd)*THRUST*dt*60;
+    thrusting=true;
   }
   if(keys['KeyS']||keys['ArrowDown']){
-    ship.vx-=Math.cos(fwd)*THRUST*.65*dt*60;
-    ship.vy-=Math.sin(fwd)*THRUST*.65*dt*60;
+    ship.vx-=Math.cos(fwd)*THRUST*.7*dt*60;
+    ship.vy-=Math.sin(fwd)*THRUST*.7*dt*60;
+    thrusting=true;
   }
   if(keys['KeyA']||keys['ArrowLeft']){
     ship.vx+=Math.cos(right-Math.PI)*STRAFE*dt*60;
     ship.vy+=Math.sin(right-Math.PI)*STRAFE*dt*60;
+    thrusting=true;
   }
   if(keys['KeyD']||keys['ArrowRight']){
     ship.vx+=Math.cos(right)*STRAFE*dt*60;
     ship.vy+=Math.sin(right)*STRAFE*dt*60;
+    thrusting=true;
   }
 
-  // Space-friction: gradual drag so movement feels floaty but controllable
-  const anyKey=keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']||
-               keys['ArrowUp']||keys['ArrowDown']||keys['ArrowLeft']||keys['ArrowRight'];
-  const drag=anyKey?Math.pow(.88,dt*60):Math.pow(.80,dt*60);
+  // KEY FIX: near-zero drag while thrusting → ship freely builds to MAX_SPD
+  // Heavy drag only when coasting → slows to stop naturally
+  const thrusting=keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']||
+                  keys['ArrowUp']||keys['ArrowDown']||keys['ArrowLeft']||keys['ArrowRight'];
+  const drag=thrusting?Math.pow(.994,dt*60):Math.pow(.84,dt*60);
   ship.vx*=drag; ship.vy*=drag;
 
   // Speed cap
