@@ -543,41 +543,49 @@ function loop(ts){
   }
   ctx.globalAlpha=1;
 
-  // ── SHIP MOVEMENT (snappy WASD)
+  // ── SHIP MOVEMENT
+  // Ship always faces the mouse cursor
+  const mdx=mx-ship.x,mdy=my-ship.y;
+  if(Math.hypot(mdx,mdy)>8) ship.angle=Math.atan2(mdy,mdx);
+
   const spMult=1+upg('velocity')*.22;
-  const MAX_SPD=5.2*spMult;
-  let tx=0,ty=0;
-  if(keys['KeyA']||keys['ArrowLeft'])tx-=1;
-  if(keys['KeyD']||keys['ArrowRight'])tx+=1;
-  if(keys['KeyW']||keys['ArrowUp'])ty-=1;
-  if(keys['KeyS']||keys['ArrowDown'])ty+=1;
-  // Normalize diagonal
-  if(tx!==0&&ty!==0){tx*=.7071;ty*=.7071;}
+  const THRUST=0.38*spMult;    // W forward power
+  const STRAFE=0.26*spMult;    // A/D sideways power
+  const MAX_SPD=5.8*spMult;
 
-  // Mouse attraction (gentle, layered on top of WASD)
-  const mdx=mx-ship.x,mdy=my-ship.y,md=Math.hypot(mdx,mdy);
-  if(md>14){
-    const pull=Math.min(md*.012,1.1)*spMult;
-    ship.vx+=(mdx/md)*pull*dt*60*.04;
-    ship.vy+=(mdy/md)*pull*dt*60*.04;
+  // W = thrust forward in the direction the ship faces
+  // S = brake / reverse thrust
+  // A = strafe left  (perpendicular to facing)
+  // D = strafe right
+  const fwd=ship.angle;
+  const right=ship.angle+Math.PI/2;
+
+  if(keys['KeyW']||keys['ArrowUp']){
+    ship.vx+=Math.cos(fwd)*THRUST*dt*60;
+    ship.vy+=Math.sin(fwd)*THRUST*dt*60;
+  }
+  if(keys['KeyS']||keys['ArrowDown']){
+    ship.vx-=Math.cos(fwd)*THRUST*.65*dt*60;
+    ship.vy-=Math.sin(fwd)*THRUST*.65*dt*60;
+  }
+  if(keys['KeyA']||keys['ArrowLeft']){
+    ship.vx+=Math.cos(right-Math.PI)*STRAFE*dt*60;
+    ship.vy+=Math.sin(right-Math.PI)*STRAFE*dt*60;
+  }
+  if(keys['KeyD']||keys['ArrowRight']){
+    ship.vx+=Math.cos(right)*STRAFE*dt*60;
+    ship.vy+=Math.sin(right)*STRAFE*dt*60;
   }
 
-  // Apply keyboard as direct target velocity lerp (snappy!)
-  if(tx!==0||ty!==0){
-    const targetVx=tx*MAX_SPD,targetVy=ty*MAX_SPD;
-    ship.vx+=(targetVx-ship.vx)*.28;
-    ship.vy+=(targetVy-ship.vy)*.28;
-  } else {
-    // No key pressed: quick deceleration
-    ship.vx*=.82;ship.vy*=.82;
-  }
+  // Space-friction: gradual drag so movement feels floaty but controllable
+  const anyKey=keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']||
+               keys['ArrowUp']||keys['ArrowDown']||keys['ArrowLeft']||keys['ArrowRight'];
+  const drag=anyKey?Math.pow(.88,dt*60):Math.pow(.80,dt*60);
+  ship.vx*=drag; ship.vy*=drag;
 
   // Speed cap
   const spd=Math.hypot(ship.vx,ship.vy);
-  if(spd>MAX_SPD*1.5){ship.vx=ship.vx/spd*MAX_SPD*1.5;ship.vy=ship.vy/spd*MAX_SPD*1.5;}
-
-  // Face direction of motion
-  if(spd>.25)ship.angle=Math.atan2(ship.vy,ship.vx);
+  if(spd>MAX_SPD){ship.vx=ship.vx/spd*MAX_SPD;ship.vy=ship.vy/spd*MAX_SPD;}
 
   ship.x+=ship.vx*dt*60*.55;ship.y+=ship.vy*dt*60*.55;
   if(ship.x<-30)ship.x=W+30;else if(ship.x>W+30)ship.x=-30;
