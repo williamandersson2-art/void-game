@@ -1,61 +1,69 @@
 # VOID ☄️
 
-> **A minimalist space survival game. Navigate the asteroid field. Survive.**
+> **A minimalist neon space survival game. Navigate the asteroid field. Survive. Upgrade.**
 
 ![Game Preview](https://img.shields.io/badge/game-browser--based-0cf?style=flat-square&logo=html5&logoColor=white)
-![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![No dependencies](https://img.shields.io/badge/dependencies-none-brightgreen?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 
 ---
 
-## Play
+## ▶ Play
 
-Just open `index.html` in any modern browser. No install, no build step, no dependencies.
+**[williamandersson2-art.github.io/void-game](https://williamandersson2-art.github.io/void-game/)**
 
-```
-open index.html
-```
-
-Or deploy it anywhere — it's a single HTML file.
+Or clone and open `index.html` — no install, no build step, no dependencies.
 
 ---
 
-## How to Play
+## Controls
 
 | Input | Action |
 |---|---|
 | **Mouse** | Steer the ship |
-| **Arrow Keys / WASD** | Alternative movement |
+| **W A S D** | Move (standard keyboard) |
+| **Arrow Keys** | Move (alternative) |
+| **Space / Click** | Shoot *(requires Turret upgrade)* |
 
-- **Collect glowing orbs** for +10 points each
-- **Avoid asteroids** — you have 3 lives
-- Survive longer to reach higher waves — asteroids get faster
-- The ship wraps around screen edges
+---
+
+## Upgrades
+
+Every **5 orbs** collected, pick one of 3 random upgrades:
+
+| Upgrade | Effect |
+|---|---|
+| ◎ **MAGNET** | Orbs fly toward you |
+| ⬡ **SHIELD** | Absorbs 1 extra hit (up to 3x) |
+| ▶ **VELOCITY** | Ship speed +25% (stackable) |
+| ◆ **BOUNTY** | Orbs worth double points |
+| ✦ **FROST** | Asteroids move 18% slower (stackable) |
+| ▲ **TURRET** | Space/click to shoot and destroy asteroids |
+| ♥ **REPAIR** | Instantly restore 1 life |
+| ◌ **GHOST** | Longer invincibility window after hits |
 
 ---
 
 ## Features
 
-- Smooth canvas-based rendering at 60fps
-- Procedurally generated asteroids with unique shapes
-- Particle trail + engine flame effect on the ship
-- Explosion particles on collision and orb collection
-- Twinkling parallax star field
-- Wave difficulty scaling
-- High score tracking (per session)
+- 60fps canvas rendering with particle effects
+- WASD + Arrow Keys + Mouse controls
+- 8-upgrade progression system — choose every 5 orbs
+- Best score saved to `localStorage` (persists between sessions)
+- Shield ring visual when shield upgrade is active
+- Turret aim line when turret upgrade is active
+- Magnet pulls orbs toward you
+- Wave difficulty scaling every 18 seconds
+- Procedurally generated asteroid shapes
+- Ship trail, engine flame, explosion particles
 - Mobile touch support
-- Zero dependencies — pure HTML/CSS/JS
 
 ---
 
 ## Built With
 
-- HTML5 Canvas API
-- Vanilla JavaScript
-- [Orbitron](https://fonts.google.com/specimen/Orbitron) font via Google Fonts
+Pure HTML5 Canvas · Vanilla JS · [Orbitron](https://fonts.google.com/specimen/Orbitron) font
 
 ---
 
-## License
-
-MIT — do whatever you want with it.
+MIT License
